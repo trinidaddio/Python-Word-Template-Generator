@@ -1,10 +1,9 @@
 # DocCreatorv5.py - Midmark Excel to Word document generator with template header/footer replacement
 #
-# V11 - ADDED CUSTOM ICON: The script now looks for 'MidmarkTLogo.ico' in its
+# 08092025 ADDED CUSTOM ICON: The script now looks for 'MidmarkTLogo.ico' in its
 # directory and sets it as the application window icon.
-#
-# uploaded to github.com
-# testing push
+# switched to customtkinter for improved UI elements and styling.
+
 import os
 import json
 import re
