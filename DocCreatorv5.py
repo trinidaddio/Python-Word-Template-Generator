@@ -13,8 +13,8 @@ import threading
 import queue
 import pythoncom
 import pandas as pd
-import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+import customtkinter as ctk
+from tkinter import filedialog, messagebox
 from pathlib import Path
 import win32com.client as win32
 import time
@@ -230,84 +230,96 @@ def document_generation_worker(excel_path, output_folder, progress_queue):
         pythoncom.CoUninitialize()
 
 
-# --- TKINTER GUI APPLICATION ---
-class DocCreatorApp(tk.Tk):
+# --- CUSTOMTKINTER GUI APPLICATION ---
+class DocCreatorApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.excel_path = None
         self.output_folder = None
         self.progress_queue = queue.Queue()
+        self.total_docs = 0
+        
+        # --- Theme and Appearance ---
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("blue")
+
         self.setup_ui()
         self.load_initial_paths()
 
     def setup_ui(self):
         self.title("Midmark Excel to Word Document Generator")
-        self.configure(bg="#f0f0f0")
-        self.minsize(500, 550)
+        self.geometry("550x600")
+        self.minsize(550, 600)
 
         # --- Set Window Icon ---
         try:
-            # Get the base path for the script, works for both .py and frozen .exe
             if getattr(sys, 'frozen', False):
                 base_path = sys._MEIPASS
             else:
                 base_path = os.path.dirname(os.path.abspath(__file__))
-            
             icon_path = os.path.join(base_path, "MidmarkTLogo.ico")
-            
             if os.path.exists(icon_path):
                 self.iconbitmap(icon_path)
         except Exception:
-            # If icon fails to load for any reason, just continue without it.
             pass
 
-        style = ttk.Style(self)
-        style.configure("TButton", font=("Helvetica", 11), padding=5)
-        style.configure("TLabel", background="#f0f0f0", font=("Helvetica", 10))
-        style.configure("Heading.TLabel", font=("Helvetica", 12, "bold"))
-        style.configure("Status.TLabel", font=("Helvetica", 10, "italic"))
-        frame = ttk.Frame(self, padding="15 15 15 15")
-        frame.pack(expand=True, fill="both")
-        frame.columnconfigure(1, weight=1)
-        ttk.Label(frame, text="Step 1: Select Excel File", style="Heading.TLabel").grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, 5))
-        self.excel_path_label = ttk.Label(frame, text="No file selected", foreground="#555", wraplength=350)
+        # --- Main Frame ---
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(3, weight=1)
+
+        # --- Input Frame ---
+        input_frame = ctk.CTkFrame(self)
+        input_frame.grid(row=0, column=0, padx=15, pady=15, sticky="ew")
+        input_frame.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(input_frame, text="Step 1: Select Excel File", font=ctk.CTkFont(weight="bold")).grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, 5))
+        self.excel_path_label = ctk.CTkLabel(input_frame, text="No file selected", text_color="gray70", wraplength=350)
         self.excel_path_label.grid(row=1, column=0, columnspan=2, sticky="w", padx=5)
-        ttk.Button(frame, text="Browse...", command=self.select_excel_file).grid(row=1, column=2, padx=5)
-        ttk.Label(frame, text="Step 2: Select Output Folder", style="Heading.TLabel").grid(row=2, column=0, columnspan=3, sticky="w", pady=(15, 5))
-        self.output_folder_label = ttk.Label(frame, text="No folder selected", foreground="#555", wraplength=350)
+        ctk.CTkButton(input_frame, text="Browse...", command=self.select_excel_file, width=100).grid(row=1, column=2, padx=5)
+        
+        ctk.CTkLabel(input_frame, text="Step 2: Select Output Folder", font=ctk.CTkFont(weight="bold")).grid(row=2, column=0, columnspan=3, sticky="w", pady=(15, 5))
+        self.output_folder_label = ctk.CTkLabel(input_frame, text="No folder selected", text_color="gray70", wraplength=350)
         self.output_folder_label.grid(row=3, column=0, columnspan=2, sticky="w", padx=5)
-        ttk.Button(frame, text="Browse...", command=self.select_output_folder).grid(row=3, column=2, padx=5)
-        self.generate_btn = ttk.Button(frame, text="Generate Documents", state="disabled", command=self.start_generation)
-        self.generate_btn.grid(row=4, column=0, columnspan=3, sticky="ew", padx=5, pady=20)
-        self.progress_bar = ttk.Progressbar(frame, mode="determinate")
-        self.progress_bar.grid(row=5, column=0, columnspan=3, sticky="ew", padx=5, pady=5)
-        self.progress_bar.grid_remove() 
-        self.status_label = ttk.Label(frame, text="Status: Ready", style="Status.TLabel", anchor="center")
-        self.status_label.grid(row=6, column=0, columnspan=3, sticky="ew", padx=5)
-        status_frame = ttk.Frame(frame)
-        status_frame.grid(row=7, column=0, columnspan=3, sticky="nsew", padx=5, pady=10)
-        status_frame.rowconfigure(0, weight=1)
-        status_frame.columnconfigure(0, weight=1)
-        frame.rowconfigure(7, weight=1)
-        self.status_box = tk.Text(status_frame, height=10, wrap="word", font=("Courier New", 9), state="disabled", relief="solid", borderwidth=1)
-        self.status_box.grid(row=0, column=0, sticky="nsew")
-        scrollbar = ttk.Scrollbar(status_frame, orient="vertical", command=self.status_box.yview)
-        scrollbar.grid(row=0, column=1, sticky="ns")
-        self.status_box.config(yscrollcommand=scrollbar.set)
-        self.open_folder_btn = ttk.Button(frame, text="Open Output Folder", state="disabled", command=self.open_output_folder)
-        self.open_folder_btn.grid(row=8, column=0, columnspan=3, pady=10)
-        ttk.Label(frame, text="©2025 Midmark Corporation. All rights reserved.", foreground="#777").grid(row=9, column=0, columnspan=3, sticky="s", pady=(10, 0))
+        ctk.CTkButton(input_frame, text="Browse...", command=self.select_output_folder, width=100).grid(row=3, column=2, padx=5)
+
+        # --- Action Button ---
+        self.generate_btn = ctk.CTkButton(self, text="Generate Documents", state="disabled", command=self.start_generation, font=ctk.CTkFont(size=14))
+        self.generate_btn.grid(row=1, column=0, padx=15, pady=10, sticky="ew")
+
+        # --- Progress Bar & Status ---
+        self.progress_bar = ctk.CTkProgressBar(self, mode="determinate")
+        self.progress_bar.set(0)
+        self.progress_bar.grid(row=2, column=0, padx=15, pady=5, sticky="ew")
+        self.progress_bar.grid_remove()
+        
+        self.status_label = ctk.CTkLabel(self, text="Status: Ready", text_color="gray70")
+        self.status_label.grid(row=3, column=0, padx=15, pady=(0,5), sticky="ew")
+
+        # --- Status Log ---
+        self.status_box = ctk.CTkTextbox(self, height=200, wrap="word", font=("Courier New", 12), state="disabled")
+        self.status_box.grid(row=4, column=0, padx=15, pady=(0,10), sticky="nsew")
+        self.grid_rowconfigure(4, weight=1)
+
+        # --- Bottom Frame ---
+        bottom_frame = ctk.CTkFrame(self)
+        bottom_frame.grid(row=5, column=0, padx=15, pady=(0,10), sticky="ew")
+        bottom_frame.grid_columnconfigure(0, weight=1)
+
+        self.open_folder_btn = ctk.CTkButton(bottom_frame, text="Open Output Folder", state="disabled", command=self.open_output_folder)
+        self.open_folder_btn.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
+
+        ctk.CTkLabel(bottom_frame, text="©2025 Midmark Corporation. All rights reserved.", text_color="gray50", font=ctk.CTkFont(size=10)).grid(row=1, column=0, columnspan=2, sticky="s", pady=(5, 0))
 
     def load_initial_paths(self):
         last_locations = load_last_locations()
         last_excel = last_locations.get("excel_path")
         if last_excel and Path(last_excel).is_file():
             self.excel_path = Path(last_excel)
-            self.excel_path_label.config(text=self.excel_path.name)
+            self.excel_path_label.configure(text=self.excel_path.name)
         last_output = last_locations.get("output_dir")
         if last_output and Path(last_output).is_dir():
             self.output_folder = Path(last_output)
-            self.output_folder_label.config(text=str(self.output_folder))
+            self.output_folder_label.configure(text=str(self.output_folder))
         self.update_generate_button_state()
 
     def select_excel_file(self):
@@ -320,7 +332,7 @@ class DocCreatorApp(tk.Tk):
             messagebox.showerror("Excel Error", f"Could not read the Excel file:\n{e}")
             return
         self.excel_path = Path(file_path_str)
-        self.excel_path_label.config(text=self.excel_path.name)
+        self.excel_path_label.configure(text=self.excel_path.name)
         self.update_generate_button_state()
         save_last_locations(excel_path=self.excel_path)
 
@@ -329,25 +341,25 @@ class DocCreatorApp(tk.Tk):
         folder_path_str = filedialog.askdirectory(title="Select Output Folder", initialdir=initial_dir)
         if folder_path_str:
             self.output_folder = Path(folder_path_str)
-            self.output_folder_label.config(text=str(self.output_folder))
+            self.output_folder_label.configure(text=str(self.output_folder))
             self.update_generate_button_state()
             save_last_locations(output_dir=self.output_folder)
 
     def update_generate_button_state(self):
         state = "normal" if self.excel_path and self.output_folder else "disabled"
-        self.generate_btn.config(state=state)
+        self.generate_btn.configure(state=state)
 
     def open_output_folder(self):
         if self.output_folder and self.output_folder.is_dir():
             os.startfile(self.output_folder)
 
     def start_generation(self):
-        self.generate_btn.config(state="disabled")
-        self.open_folder_btn.config(state="disabled")
+        self.generate_btn.configure(state="disabled")
+        self.open_folder_btn.configure(state="disabled")
         self.progress_bar.grid()
-        self.progress_bar["value"] = 0
-        self.status_label.config(text="🔄 Initializing...")
-        self.status_box.config(state="normal")
+        self.progress_bar.set(0)
+        self.status_label.configure(text="🔄 Initializing...")
+        self.status_box.configure(state="normal")
         self.status_box.delete("1.0", "end")
         self.worker_thread = threading.Thread(target=document_generation_worker, args=(self.excel_path, self.output_folder, self.progress_queue))
         self.worker_thread.start()
@@ -361,19 +373,20 @@ class DocCreatorApp(tk.Tk):
                 messagebox.showerror("Error", payload[0])
                 self.reset_ui()
             elif msg_type == "set_max":
-                self.progress_bar.config(maximum=payload[0])
-                self.status_label.config(text="🔄 Generating documents...")
+                self.total_docs = payload[0]
+                self.status_label.configure(text="🔄 Generating documents...")
             elif msg_type == "progress":
-                self.progress_bar["value"] = payload[0]
-                max_val = self.progress_bar["maximum"]
-                percent = int((payload[0] / max_val) * 100) if max_val > 0 else 0
-                self.status_label.config(text=f"🔄 In progress... {percent}%")
+                if self.total_docs > 0:
+                    progress_float = payload[0] / self.total_docs
+                    self.progress_bar.set(progress_float)
+                    percent = int(progress_float * 100)
+                    self.status_label.configure(text=f"🔄 In progress... {percent}%")
             elif msg_type == "log":
                 self.status_box.insert("end", payload[0])
                 self.status_box.see("end")
             elif msg_type == "done":
                 success_count, total_docs = payload
-                self.status_label.config(text=f"✅ Finished. {success_count}/{total_docs} documents created.")
+                self.status_label.configure(text=f"✅ Finished. {success_count}/{total_docs} documents created.")
                 self.reset_ui(finished=True)
             self.after(100, self.poll_queue) 
         except queue.Empty:
@@ -384,10 +397,10 @@ class DocCreatorApp(tk.Tk):
 
     def reset_ui(self, finished=False):
         self.progress_bar.after(1000, self.progress_bar.grid_remove)
-        self.generate_btn.config(state="normal")
-        self.status_box.config(state="disabled")
+        self.generate_btn.configure(state="normal")
+        self.status_box.configure(state="disabled")
         if finished:
-            self.open_folder_btn.config(state="normal")
+            self.open_folder_btn.configure(state="normal")
 
 if __name__ == "__main__":
     app = DocCreatorApp()
