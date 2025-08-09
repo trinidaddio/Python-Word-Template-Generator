@@ -237,18 +237,37 @@ class DocCreatorApp(ctk.CTk):
         self.output_folder = None
         self.progress_queue = queue.Queue()
         self.total_docs = 0
-        
-        # --- Theme and Appearance ---
-        ctk.set_appearance_mode("dark")
-        ctk.set_default_color_theme("blue")
+
+        # This needs to be here to prevent a race condition on startup
+        self.after(100, self.poll_queue)
 
         self.setup_ui()
         self.load_initial_paths()
 
     def setup_ui(self):
-        self.title("Midmark Excel to Word Document Generator")
-        self.geometry("550x600")
-        self.minsize(550, 600)
+        # --- Colors (approximated from Tailwind names) ---
+        self.colors = {
+            "gray-900": "#111827",
+            "gray-800": "#1F2937",
+            "gray-700": "#374151",
+            "gray-600": "#4B5563",
+            "gray-500": "#6B7280",
+            "gray-400": "#9CA3AF",
+            "gray-300": "#D1D5DB",
+            "gray-200": "#E5E7EB",
+            "blue-600": "#2563EB",
+            "blue-700": "#1D4ED8",  # hover
+            "green-400": "#4ADE80",
+        }
+
+        # --- Font Setup ---
+        self.font_family = "Segoe UI"
+
+        # --- Window Setup ---
+        self.title("Excel to Word Document Generator")
+        self.geometry("700x800")
+        self.minsize(650, 750)
+        self.configure(fg_color=self.colors["gray-900"])
 
         # --- Set Window Icon ---
         try:
@@ -262,63 +281,95 @@ class DocCreatorApp(ctk.CTk):
         except Exception:
             pass
 
-        # --- Main Frame ---
+        # --- Main Layout ---
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(3, weight=1)
+        self.grid_rowconfigure(1, weight=1)
 
-        # --- Input Frame ---
-        input_frame = ctk.CTkFrame(self)
-        input_frame.grid(row=0, column=0, padx=15, pady=15, sticky="ew")
-        input_frame.grid_columnconfigure(1, weight=1)
+        # --- Header ---
+        header = ctk.CTkFrame(self, fg_color=self.colors["gray-800"], corner_radius=0, height=60)
+        header.grid(row=0, column=0, sticky="ew")
+        header.grid_columnconfigure(0, weight=1)
+        header_label = ctk.CTkLabel(header, text="Excel to Word Document Generator", font=ctk.CTkFont(family=self.font_family, size=20, weight="bold"), text_color=self.colors["gray-200"])
+        header_label.grid(row=0, column=0, padx=20, pady=10, sticky="w")
 
-        ctk.CTkLabel(input_frame, text="Step 1: Select Excel File", font=ctk.CTkFont(weight="bold")).grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, 5))
-        self.excel_path_label = ctk.CTkLabel(input_frame, text="No file selected", text_color="gray70", wraplength=350)
-        self.excel_path_label.grid(row=1, column=0, columnspan=2, sticky="w", padx=5)
-        ctk.CTkButton(input_frame, text="Browse...", command=self.select_excel_file, width=100).grid(row=1, column=2, padx=5)
-        
-        ctk.CTkLabel(input_frame, text="Step 2: Select Output Folder", font=ctk.CTkFont(weight="bold")).grid(row=2, column=0, columnspan=3, sticky="w", pady=(15, 5))
-        self.output_folder_label = ctk.CTkLabel(input_frame, text="No folder selected", text_color="gray70", wraplength=350)
-        self.output_folder_label.grid(row=3, column=0, columnspan=2, sticky="w", padx=5)
-        ctk.CTkButton(input_frame, text="Browse...", command=self.select_output_folder, width=100).grid(row=3, column=2, padx=5)
+        # --- Content Area ---
+        content_area = ctk.CTkScrollableFrame(self, fg_color="transparent", scrollbar_button_color=self.colors["gray-700"], scrollbar_button_hover_color=self.colors["gray-600"])
+        content_area.grid(row=1, column=0, sticky="nsew", padx=24, pady=12)
+        content_area.grid_columnconfigure(0, weight=1)
 
-        # --- Action Button ---
-        self.generate_btn = ctk.CTkButton(self, text="Generate Documents", state="disabled", command=self.start_generation, font=ctk.CTkFont(size=14))
-        self.generate_btn.grid(row=1, column=0, padx=15, pady=10, sticky="ew")
+        # --- Step 1 Card ---
+        step1_card = ctk.CTkFrame(content_area, fg_color=self.colors["gray-800"], corner_radius=8)
+        step1_card.grid(row=0, column=0, sticky="ew", pady=(10, 0))
+        step1_card.grid_columnconfigure(0, weight=1)
 
-        # --- Progress Bar & Status ---
-        self.progress_bar = ctk.CTkProgressBar(self, mode="determinate")
+        ctk.CTkLabel(step1_card, text="Step 1: Select Excel File", font=ctk.CTkFont(family=self.font_family, size=16, weight="bold"), text_color=self.colors["gray-300"], anchor="w").grid(row=0, column=0, columnspan=2, padx=24, pady=(20, 16), sticky="ew")
+
+        step1_inner_frame = ctk.CTkFrame(step1_card, fg_color="transparent")
+        step1_inner_frame.grid(row=1, column=0, columnspan=2, padx=24, pady=(0, 24), sticky="ew")
+        step1_inner_frame.grid_columnconfigure(0, weight=1)
+
+        self.excel_path_label = ctk.CTkLabel(step1_inner_frame, text="No file selected", fg_color=self.colors["gray-700"], text_color=self.colors["gray-400"], corner_radius=6, anchor="w", padx=12, height=40)
+        self.excel_path_label.grid(row=0, column=0, sticky="ew")
+
+        ctk.CTkButton(step1_inner_frame, text="Browse...", command=self.select_excel_file, width=120, height=40, fg_color=self.colors["gray-600"], hover_color=self.colors["gray-700"], font=ctk.CTkFont(family=self.font_family, size=14, weight="bold")).grid(row=0, column=1, padx=(16, 0))
+
+        # --- Step 2 Card ---
+        step2_card = ctk.CTkFrame(content_area, fg_color=self.colors["gray-800"], corner_radius=8)
+        step2_card.grid(row=1, column=0, sticky="ew", pady=24)
+        step2_card.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(step2_card, text="Step 2: Select Output Folder", font=ctk.CTkFont(family=self.font_family, size=16, weight="bold"), text_color=self.colors["gray-300"], anchor="w").grid(row=0, column=0, columnspan=2, padx=24, pady=(20, 16), sticky="ew")
+
+        step2_inner_frame = ctk.CTkFrame(step2_card, fg_color="transparent")
+        step2_inner_frame.grid(row=1, column=0, columnspan=2, padx=24, pady=(0, 24), sticky="ew")
+        step2_inner_frame.grid_columnconfigure(0, weight=1)
+
+        self.output_folder_label = ctk.CTkLabel(step2_inner_frame, text="No folder selected", fg_color=self.colors["gray-700"], text_color=self.colors["gray-400"], corner_radius=6, anchor="w", padx=12, height=40)
+        self.output_folder_label.grid(row=0, column=0, sticky="ew")
+
+        ctk.CTkButton(step2_inner_frame, text="Browse...", command=self.select_output_folder, width=120, height=40, fg_color=self.colors["gray-600"], hover_color=self.colors["gray-700"], font=ctk.CTkFont(family=self.font_family, size=14, weight="bold")).grid(row=0, column=1, padx=(16, 0))
+
+        # --- Generate Button ---
+        self.generate_btn = ctk.CTkButton(content_area, text="Generate Documents", state="disabled", command=self.start_generation, height=52, fg_color=self.colors["blue-600"], hover_color=self.colors["blue-700"], font=ctk.CTkFont(family=self.font_family, size=16, weight="bold"))
+        self.generate_btn.grid(row=2, column=0, sticky="ew", pady=(0, 16))
+
+        # --- Status & Progress ---
+        status_frame = ctk.CTkFrame(content_area, fg_color="transparent")
+        status_frame.grid(row=3, column=0, pady=8)
+
+        self.status_label = ctk.CTkLabel(status_frame, text="Status: Ready", font=ctk.CTkFont(family=self.font_family, size=14), text_color=self.colors["green-400"])
+        self.status_label.grid(row=0, column=0, padx=(0, 8))
+
+        self.progress_bar = ctk.CTkProgressBar(content_area, mode="determinate", height=8, fg_color=self.colors["gray-700"], progress_color=self.colors["green-400"])
         self.progress_bar.set(0)
-        self.progress_bar.grid(row=2, column=0, padx=15, pady=5, sticky="ew")
-        self.progress_bar.grid_remove()
-        
-        self.status_label = ctk.CTkLabel(self, text="Status: Ready", text_color="gray70")
-        self.status_label.grid(row=3, column=0, padx=15, pady=(0,5), sticky="ew")
 
-        # --- Status Log ---
-        self.status_box = ctk.CTkTextbox(self, height=200, wrap="word", font=("Courier New", 12), state="disabled")
-        self.status_box.grid(row=4, column=0, padx=15, pady=(0,10), sticky="nsew")
-        self.grid_rowconfigure(4, weight=1)
+        # --- Log Textbox ---
+        self.status_box = ctk.CTkTextbox(content_area, wrap="word", font=("Courier New", 12), state="disabled", fg_color=self.colors["gray-800"], border_color=self.colors["gray-600"], border_width=1, text_color=self.colors["gray-300"], corner_radius=8)
+        self.status_box.grid(row=4, column=0, sticky="nsew", pady=(16, 0))
+        content_area.grid_rowconfigure(4, weight=1)
 
-        # --- Bottom Frame ---
-        bottom_frame = ctk.CTkFrame(self)
-        bottom_frame.grid(row=5, column=0, padx=15, pady=(0,10), sticky="ew")
-        bottom_frame.grid_columnconfigure(0, weight=1)
+        # --- Bottom Frame (in its own area) ---
+        bottom_area = ctk.CTkFrame(self, fg_color="transparent")
+        bottom_area.grid(row=2, column=0, sticky="ew", padx=24, pady=(12,0))
+        bottom_area.grid_columnconfigure(0, weight=1)
 
-        self.open_folder_btn = ctk.CTkButton(bottom_frame, text="Open Output Folder", state="disabled", command=self.open_output_folder)
-        self.open_folder_btn.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
+        self.open_folder_btn = ctk.CTkButton(bottom_area, text="Open Output Folder", state="disabled", command=self.open_output_folder, height=52, fg_color=self.colors["gray-700"], hover_color=self.colors["gray-600"], border_color=self.colors["gray-600"], border_width=1, font=ctk.CTkFont(family=self.font_family, size=14, weight="bold"))
+        self.open_folder_btn.grid(row=0, column=0, sticky="ew")
 
-        ctk.CTkLabel(bottom_frame, text="©2025 Midmark Corporation. All rights reserved.", text_color="gray50", font=ctk.CTkFont(size=10)).grid(row=1, column=0, columnspan=2, sticky="s", pady=(5, 0))
+        # --- Footer ---
+        footer = ctk.CTkLabel(self, text="© 2025 Midmark Corporation. All rights reserved.", text_color=self.colors["gray-500"], font=ctk.CTkFont(size=12))
+        footer.grid(row=3, column=0, padx=24, pady=16, sticky="s")
 
     def load_initial_paths(self):
         last_locations = load_last_locations()
         last_excel = last_locations.get("excel_path")
         if last_excel and Path(last_excel).is_file():
             self.excel_path = Path(last_excel)
-            self.excel_path_label.configure(text=self.excel_path.name)
+            self.excel_path_label.configure(text=self.excel_path.name, text_color=self.colors["gray-200"])
         last_output = last_locations.get("output_dir")
         if last_output and Path(last_output).is_dir():
             self.output_folder = Path(last_output)
-            self.output_folder_label.configure(text=str(self.output_folder))
+            self.output_folder_label.configure(text=str(self.output_folder), text_color=self.colors["gray-200"])
         self.update_generate_button_state()
 
     def select_excel_file(self):
@@ -331,7 +382,7 @@ class DocCreatorApp(ctk.CTk):
             messagebox.showerror("Excel Error", f"Could not read the Excel file:\n{e}")
             return
         self.excel_path = Path(file_path_str)
-        self.excel_path_label.configure(text=self.excel_path.name)
+        self.excel_path_label.configure(text=self.excel_path.name, text_color=self.colors["gray-200"])
         self.update_generate_button_state()
         save_last_locations(excel_path=self.excel_path)
 
@@ -340,7 +391,7 @@ class DocCreatorApp(ctk.CTk):
         folder_path_str = filedialog.askdirectory(title="Select Output Folder", initialdir=initial_dir)
         if folder_path_str:
             self.output_folder = Path(folder_path_str)
-            self.output_folder_label.configure(text=str(self.output_folder))
+            self.output_folder_label.configure(text=str(self.output_folder), text_color=self.colors["gray-200"])
             self.update_generate_button_state()
             save_last_locations(output_dir=self.output_folder)
 
@@ -355,14 +406,13 @@ class DocCreatorApp(ctk.CTk):
     def start_generation(self):
         self.generate_btn.configure(state="disabled")
         self.open_folder_btn.configure(state="disabled")
-        self.progress_bar.grid()
+        self.progress_bar.grid(row=5, column=0, sticky="ew", pady=(0, 16))
         self.progress_bar.set(0)
-        self.status_label.configure(text="🔄 Initializing...")
+        self.status_label.configure(text="Status: Initializing...", text_color=self.colors["gray-400"])
         self.status_box.configure(state="normal")
         self.status_box.delete("1.0", "end")
         self.worker_thread = threading.Thread(target=document_generation_worker, args=(self.excel_path, self.output_folder, self.progress_queue))
         self.worker_thread.start()
-        self.after(100, self.poll_queue)
 
     def poll_queue(self):
         try:
@@ -373,29 +423,27 @@ class DocCreatorApp(ctk.CTk):
                 self.reset_ui()
             elif msg_type == "set_max":
                 self.total_docs = payload[0]
-                self.status_label.configure(text="🔄 Generating documents...")
+                self.status_label.configure(text="Status: Generating documents...", text_color=self.colors["gray-400"])
             elif msg_type == "progress":
                 if self.total_docs > 0:
                     progress_float = payload[0] / self.total_docs
                     self.progress_bar.set(progress_float)
                     percent = int(progress_float * 100)
-                    self.status_label.configure(text=f"🔄 In progress... {percent}%")
+                    self.status_label.configure(text=f"Status: In progress... {percent}%", text_color=self.colors["gray-400"])
             elif msg_type == "log":
                 self.status_box.insert("end", payload[0])
                 self.status_box.see("end")
             elif msg_type == "done":
                 success_count, total_docs = payload
-                self.status_label.configure(text=f"✅ Finished. {success_count}/{total_docs} documents created.")
+                self.status_label.configure(text=f"Status: Finished. {success_count}/{total_docs} documents created.", text_color=self.colors["green-400"])
                 self.reset_ui(finished=True)
-            self.after(100, self.poll_queue) 
         except queue.Empty:
-            if self.worker_thread.is_alive():
-                self.after(100, self.poll_queue)
-            else: 
-                self.reset_ui()
+            pass
+        finally:
+            self.after(100, self.poll_queue)
 
     def reset_ui(self, finished=False):
-        self.progress_bar.after(1000, self.progress_bar.grid_remove)
+        self.progress_bar.grid_remove()
         self.generate_btn.configure(state="normal")
         self.status_box.configure(state="disabled")
         if finished:
