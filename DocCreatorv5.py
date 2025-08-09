@@ -390,7 +390,7 @@ class DocCreatorApp(ctk.CTk):
         # --- Right Frame Content ---
         status_log_label = ctk.CTkLabel(right_frame, text="Status Log", font=ctk.CTkFont(family=self.font_family, size=16, weight="bold"), text_color=self.colors["gray-300"])
         status_log_label.grid(row=0, column=0, sticky="w", pady=(10, 8))
-        self.status_box = ctk.CTkTextbox(right_frame, wrap="word", font=("Century Gothic", 16), state="disabled", fg_color=self.colors["gray-800"], border_color=self.colors["gray-600"], border_width=1, text_color=self.colors["gray-300"], corner_radius=8)
+        self.status_box = ctk.CTkTextbox(right_frame, wrap="word", font=ctk.CTkFont(family=self.font_family, size=12), state="disabled", fg_color=self.colors["gray-800"], border_color=self.colors["gray-600"], border_width=1, text_color=self.colors["gray-300"], corner_radius=8)
         self.status_box.grid(row=1, column=0, sticky="nsew")
         self.open_folder_btn = ctk.CTkButton(right_frame, text="Open Output Folder", state="disabled", command=self.open_output_folder, height=52, fg_color=self.colors["gray-700"], hover_color=self.colors["gray-600"], border_color=self.colors["gray-600"], border_width=1, font=ctk.CTkFont(family=self.font_family, size=14, weight="bold"))
         self.open_folder_btn.grid(row=2, column=0, sticky="ew", pady=(16, 10))
