@@ -1,7 +1,7 @@
 # DocCreatorv5.py 
 # Midmark Excel to Word Doc Generator
 # Author: Trinidad Hernandez
-# Description: This script automates the process of generating Word documents from Excel data,
+# Description: Automates Word Tempola documents from Excel data,
 #              with support for custom templates and dynamic content replacement. 
 
 import os
