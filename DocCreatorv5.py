@@ -312,7 +312,7 @@ class DocCreatorApp(ctk.CTk):
             "gray-300": "#D1D5DB", "gray-200": "#E5E7EB", "blue-600": "#2563EB",
             "blue-700": "#1D4ED8", "green-400": "#4ADE80",
         }
-        self.font_family = "Century Gothic"
+        self.font_family = "Berlin Sans FB"
 
         self.title("Midmark Document Template Generator")
         self.minsize(800, 600)
