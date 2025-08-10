@@ -248,7 +248,7 @@ class DocCreatorApp(ctk.CTk):
         self.temp_icon_path = None
 
         # --- UI Configuration ---
-        self.left_column_weight = 1
+        self.left_column_weight = 0
         self.right_column_weight = 1
         font_family = "Century Gothic"
         self.fonts = {
@@ -349,11 +349,11 @@ class DocCreatorApp(ctk.CTk):
         main_container.grid_rowconfigure(0, weight=1)
 
         left_frame = ctk.CTkFrame(main_container, fg_color="transparent")
-        left_frame.grid(row=0, column=0, sticky="nsew", padx=12)
+        left_frame.grid(row=0, column=0, sticky="nsew", padx=60, pady=20)
         left_frame.grid_columnconfigure(0, weight=0)
 
         right_frame = ctk.CTkFrame(main_container, fg_color="transparent")
-        right_frame.grid(row=0, column=1, sticky="nsew", padx=0)
+        right_frame.grid(row=0, column=1, sticky="nsew", padx=10)
         right_frame.grid_columnconfigure(0, weight=1)
         right_frame.grid_rowconfigure(1, weight=1)
 
