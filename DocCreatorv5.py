@@ -340,7 +340,7 @@ class DocCreatorApp(ctk.CTk):
 
         header = ctk.CTkFrame(self, fg_color=self.colors["gray-800"], corner_radius=0, height=60)
         header.grid(row=0, column=0, sticky="ew")
-        ctk.CTkLabel(header, text="Excel to Word Document Generator", font=self.fonts["header"], text_color=self.colors["gray-200"]).pack(side="left", padx=20, pady=10)
+        ctk.CTkLabel(header, text="Batch Document Generator", font=self.fonts["header"], text_color=self.colors["gray-200"]).pack(side="left", padx=20, pady=10)
 
         main_container = ctk.CTkFrame(self, fg_color="transparent")
         main_container.grid(row=1, column=0, sticky="nsew", padx=12, pady=6)
