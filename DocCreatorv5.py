@@ -211,6 +211,11 @@ def document_generation_worker(excel_path, output_folder, template_path, progres
                     footer_right2_text = str(row.get("Footer-Right2", "")).strip()
                     _replace_placeholder_in_range(footer.Range, "<footer-right2>", footer_right2_text)
 
+                    # Handle <Product> replacement across the entire document
+                    product_text = str(row.get("Product", "")).strip()
+                    if product_text:
+                        _replace_placeholder_in_range(doc.Content, "<Product>", product_text)
+
                 # --- Save and Close ---
                 safe_name = "".join(c for c in filename if c.isalnum() or c in "._- ")
                 doc_path = Path(output_folder) / f"{safe_name}.docx"
@@ -266,8 +271,8 @@ class DocCreatorApp(ctk.CTk):
         # --- Window Size & Centering ---
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
-        width = int(screen_width * 0.70)
-        height = int(screen_height * 0.50)
+        width = int(screen_width * 0.90)
+        height = int(screen_height * 0.70)
         x = int((screen_width / 2) - (width / 2))
         y = int((screen_height / 2) - (height / 2))
         self.geometry(f"{width}x{height}+{x}+{y}")
