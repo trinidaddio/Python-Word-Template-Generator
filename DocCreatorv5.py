@@ -249,15 +249,15 @@ class DocCreatorApp(ctk.CTk):
 
         # --- UI Configuration ---
         self.left_column_weight = 1
-        self.right_column_weight = 2
+        self.right_column_weight = 1
         font_family = "Century Gothic"
         self.fonts = {
-            "header": ctk.CTkFont(family=font_family, size=20, weight="bold"),
-            "card_title": ctk.CTkFont(family=font_family, size=16, weight="bold"),
-            "button": ctk.CTkFont(family=font_family, size=14, weight="bold"),
+            "header": ctk.CTkFont(family=font_family, size=18, weight="normal"),
+            "card_title": ctk.CTkFont(family=font_family, size=16, weight="normal"),
+            "button": ctk.CTkFont(family=font_family, size=14, weight="normal"),
             "status": ctk.CTkFont(family=font_family, size=14),
-            "footer": ctk.CTkFont(family=font_family, size=12),
-            "log": (font_family, 16)
+            "footer": ctk.CTkFont(family=font_family, size=16),
+            "log": (font_family, 12)
         }
 
         self.after(10, self._deferred_setup)
@@ -266,7 +266,7 @@ class DocCreatorApp(ctk.CTk):
         # --- Window Size & Centering ---
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
-        width = int(screen_width * 0.65)
+        width = int(screen_width * 0.55)
         height = int(screen_height * 0.50)
         x = int((screen_width / 2) - (width / 2))
         y = int((screen_height / 2) - (height / 2))
@@ -330,7 +330,7 @@ class DocCreatorApp(ctk.CTk):
             "blue-700": "#1D4ED8", "green-400": "#4ADE80",
         }
 
-        self.title("Excel to Word Document Generator")
+        self.title("Midmark Batch Document Generator")
         self.minsize(800, 600)
         self.configure(fg_color=self.colors["gray-900"])
 
@@ -350,10 +350,10 @@ class DocCreatorApp(ctk.CTk):
 
         left_frame = ctk.CTkFrame(main_container, fg_color="transparent")
         left_frame.grid(row=0, column=0, sticky="nsew", padx=12)
-        left_frame.grid_columnconfigure(0, weight=1)
+        left_frame.grid_columnconfigure(0, weight=0)
 
         right_frame = ctk.CTkFrame(main_container, fg_color="transparent")
-        right_frame.grid(row=0, column=1, sticky="nsew", padx=12)
+        right_frame.grid(row=0, column=1, sticky="nsew", padx=0)
         right_frame.grid_columnconfigure(0, weight=1)
         right_frame.grid_rowconfigure(1, weight=1)
 
@@ -361,7 +361,7 @@ class DocCreatorApp(ctk.CTk):
         step1_card = ctk.CTkFrame(left_frame, fg_color=self.colors["gray-800"], corner_radius=8)
         step1_card.grid(row=0, column=0, sticky="ew", pady=(10, 12))
         step1_card.grid_columnconfigure(0, weight=1)
-        ctk.CTkLabel(step1_card, text="Step 1: Select Word Template (.dotm)", font=self.fonts["card_title"], text_color=self.colors["gray-300"], anchor="w").grid(row=0, column=0, columnspan=3, padx=24, pady=(20, 16), sticky="ew")
+        ctk.CTkLabel(step1_card, text="Step 1: Select Word Template (.dotm)", font=self.fonts["card_title"], text_color=self.colors["gray-300"], anchor="w").grid(row=0, column=0, columnspan=1, padx=24, pady=(20, 16), sticky="ew")
         step1_inner = ctk.CTkFrame(step1_card, fg_color="transparent")
         step1_inner.grid(row=1, column=0, columnspan=1, padx=24, pady=(0, 24), sticky="ew")
         step1_inner.grid_columnconfigure(0, weight=1)
@@ -374,7 +374,7 @@ class DocCreatorApp(ctk.CTk):
         step2_card = ctk.CTkFrame(left_frame, fg_color=self.colors["gray-800"], corner_radius=8)
         step2_card.grid(row=1, column=0, sticky="ew", pady=12)
         step2_card.grid_columnconfigure(0, weight=1)
-        ctk.CTkLabel(step2_card, text="Step 2: Select Excel File", font=self.fonts["card_title"], text_color=self.colors["gray-300"], anchor="w").grid(row=0, column=0, columnspan=3, padx=24, pady=(20, 16), sticky="ew")
+        ctk.CTkLabel(step2_card, text="Step 2: Select Excel File", font=self.fonts["card_title"], text_color=self.colors["gray-300"], anchor="w").grid(row=0, column=0, columnspan=1, padx=24, pady=(20, 16), sticky="ew")
         step2_inner = ctk.CTkFrame(step2_card, fg_color="transparent")
         step2_inner.grid(row=1, column=0, columnspan=1, padx=24, pady=(0, 24), sticky="ew")
         step2_inner.grid_columnconfigure(0, weight=1)
@@ -387,7 +387,7 @@ class DocCreatorApp(ctk.CTk):
         step3_card = ctk.CTkFrame(left_frame, fg_color=self.colors["gray-800"], corner_radius=8)
         step3_card.grid(row=2, column=0, sticky="ew", pady=12)
         step3_card.grid_columnconfigure(0, weight=1)
-        ctk.CTkLabel(step3_card, text="Step 3: Select Output Folder", font=self.fonts["card_title"], text_color=self.colors["gray-300"], anchor="w").grid(row=0, column=0, columnspan=2, padx=24, pady=(20, 16), sticky="ew")
+        ctk.CTkLabel(step3_card, text="Step 3: Select Output Folder", font=self.fonts["card_title"], text_color=self.colors["gray-300"], anchor="w").grid(row=0, column=0, columnspan=1, padx=24, pady=(20, 16), sticky="ew")
         step3_inner = ctk.CTkFrame(step3_card, fg_color="transparent")
         step3_inner.grid(row=1, column=0, columnspan=1, padx=24, pady=(0, 24), sticky="ew")
         step3_inner.grid_columnconfigure(0, weight=1)
@@ -396,7 +396,8 @@ class DocCreatorApp(ctk.CTk):
         ctk.CTkButton(step3_inner, text="Browse...", command=self.select_output_folder, width=120, height=40, fg_color=self.colors["gray-600"], hover_color=self.colors["gray-700"], font=self.fonts["button"]).grid(row=0, column=1, padx=(16, 0))
 
         self.generate_btn = ctk.CTkButton(left_frame, text="Generate Documents", state="disabled", command=self.start_generation, height=52, fg_color=self.colors["blue-600"], hover_color=self.colors["blue-700"], font=self.fonts["card_title"])
-        self.generate_btn.grid(row=3, column=0, sticky="ew", pady=(24, 10))
+        self.generate_btn.grid(row=3, column=0,  sticky="ew", pady=(24, 10))
+        
 
         status_frame = ctk.CTkFrame(left_frame, fg_color="transparent")
         status_frame.grid(row=4, column=0, pady=8)
@@ -407,9 +408,9 @@ class DocCreatorApp(ctk.CTk):
 
         # --- Right Frame Content ---
         status_log_label = ctk.CTkLabel(right_frame, text="Status Log", font=self.fonts["card_title"], text_color=self.colors["gray-300"])
-        status_log_label.grid(row=0, column=0, columnspan=2, sticky="w", pady=(10, 8))
+        status_log_label.grid(row=0, column=0,  sticky="w", pady=(10, 8))
         self.status_box = ctk.CTkTextbox(right_frame, wrap="word", font=self.fonts["log"], state="disabled", fg_color=self.colors["gray-800"], border_color=self.colors["gray-600"], border_width=1, text_color=self.colors["gray-300"], corner_radius=8)
-        self.status_box.grid(row=1, column=0, columnspan=2,sticky="nsew")
+        self.status_box.grid(row=1, column=0, sticky="nsew")
         self.open_folder_btn = ctk.CTkButton(right_frame, text="Open Output Folder", state="disabled", command=self.open_output_folder, height=52, fg_color=self.colors["gray-700"], hover_color=self.colors["gray-600"], border_color=self.colors["gray-600"], border_width=1, font=self.fonts["button"])
         self.open_folder_btn.grid(row=2, column=0, sticky="ew", pady=(16, 10))
 
