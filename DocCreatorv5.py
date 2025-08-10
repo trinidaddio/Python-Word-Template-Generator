@@ -150,7 +150,7 @@ def document_generation_worker(excel_path, output_folder, template_path, progres
 
                             word.Selection.TypeParagraph()
                 
-                # --- ADD STATIC REFERENCES SECTION ---
+                # --- ADD GENERIC STATIC REFERENCES SECTION ---
                 progress_queue.put(("log", "  -> Adding static 'References' section...\n"))
                 word.Selection.EndKey(Unit=win32.constants.wdStory)
                 word.Selection.Style = doc.Styles("Heading 1")
@@ -266,7 +266,7 @@ class DocCreatorApp(ctk.CTk):
         # --- Window Size & Centering ---
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
-        width = int(screen_width * 0.50)
+        width = int(screen_width * 0.70)
         height = int(screen_height * 0.50)
         x = int((screen_width / 2) - (width / 2))
         y = int((screen_height / 2) - (height / 2))
