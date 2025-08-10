@@ -403,7 +403,7 @@ class DocCreatorApp(ctk.CTk):
         status_frame.grid(row=4, column=0, pady=8)
         self.status_label = ctk.CTkLabel(status_frame, text="Status: Ready", font=self.fonts["status"], text_color=self.colors["green-400"])
         self.status_label.grid(row=0, column=0, padx=(0, 8))
-        self.progress_bar = ctk.CTkProgressBar(left_frame, mode="determinate", height=8, fg_color=self.colors["gray-700"], progress_color=self.colors["green-400"])
+        self.progress_bar = ctk.CTkProgressBar(left_frame, mode="determinate", height=16, fg_color=self.colors["gray-700"], progress_color=self.colors["green-400"])
         self.progress_bar.set(0)
 
         # --- Right Frame Content ---
