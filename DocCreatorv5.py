@@ -249,7 +249,7 @@ class DocCreatorApp(ctk.CTk):
 
         # --- UI Configuration ---
         self.left_column_weight = 1
-        self.right_column_weight = 1
+        self.right_column_weight = 2
         font_family = "Century Gothic"
         self.fonts = {
             "header": ctk.CTkFont(family=font_family, size=20, weight="bold"),
