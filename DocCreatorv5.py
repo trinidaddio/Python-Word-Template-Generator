@@ -353,8 +353,8 @@ class DocCreatorApp(ctk.CTk):
         left_frame.grid_columnconfigure(0, weight=0)
 
         right_frame = ctk.CTkFrame(main_container, fg_color="transparent")
-        right_frame.grid(row=0, column=1, sticky="nsew", padx=10)
-        right_frame.grid_columnconfigure(0, weight=1)
+        right_frame.grid(row=0, column=1, sticky="nsew", padx=1)
+        right_frame.grid_columnconfigure(0, weight=1,minsize=200)
         right_frame.grid_rowconfigure(1, weight=1)
 
         # --- Left Frame Content ---
