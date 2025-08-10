@@ -267,7 +267,7 @@ class DocCreatorApp(ctk.CTk):
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         width = int(screen_width * 0.55)
-        height = int(screen_height * 0.50)
+        height = int(screen_height * 0.52)
         x = int((screen_width / 2) - (width / 2))
         y = int((screen_height / 2) - (height / 2))
         self.geometry(f"{width}x{height}+{x}+{y}")
@@ -349,7 +349,7 @@ class DocCreatorApp(ctk.CTk):
         main_container.grid_rowconfigure(0, weight=1)
 
         left_frame = ctk.CTkFrame(main_container, fg_color="transparent")
-        left_frame.grid(row=0, column=0, sticky="nsew", padx=60, pady=20)
+        left_frame.grid(row=0, column=0, sticky="nsew", padx=60, pady=35)
         left_frame.grid_columnconfigure(0, weight=0)
 
         right_frame = ctk.CTkFrame(main_container, fg_color="transparent")
@@ -358,7 +358,7 @@ class DocCreatorApp(ctk.CTk):
         right_frame.grid_rowconfigure(1, weight=1)
 
         # --- Left Frame Content ---
-        step1_card = ctk.CTkFrame(left_frame, fg_color=self.colors["gray-800"], corner_radius=8)
+        step1_card = ctk.CTkFrame(left_frame, fg_color=self.colors["gray-800"], corner_radius=8,border_color=self.colors["gray-600"], border_width=1)
         step1_card.grid(row=0, column=0, sticky="ew", pady=(10, 12))
         step1_card.grid_columnconfigure(0, weight=1)
         ctk.CTkLabel(step1_card, text="Step 1: Select Word Template (.dotm)", font=self.fonts["card_title"], text_color=self.colors["gray-300"], anchor="w").grid(row=0, column=0, columnspan=1, padx=24, pady=(20, 16), sticky="ew")
@@ -371,7 +371,7 @@ class DocCreatorApp(ctk.CTk):
         self.edit_template_btn.grid(row=0, column=1, padx=(16, 8))
         ctk.CTkButton(step1_inner, text="Browse...", command=self.select_template_file, width=120, height=40, fg_color=self.colors["gray-600"], hover_color=self.colors["gray-700"], font=self.fonts["button"]).grid(row=0, column=2, padx=(0, 0))
 
-        step2_card = ctk.CTkFrame(left_frame, fg_color=self.colors["gray-800"], corner_radius=8)
+        step2_card = ctk.CTkFrame(left_frame, fg_color=self.colors["gray-800"], corner_radius=8, border_color=self.colors["gray-600"], border_width=1)
         step2_card.grid(row=1, column=0, sticky="ew", pady=12)
         step2_card.grid_columnconfigure(0, weight=1)
         ctk.CTkLabel(step2_card, text="Step 2: Select Excel File", font=self.fonts["card_title"], text_color=self.colors["gray-300"], anchor="w").grid(row=0, column=0, columnspan=1, padx=24, pady=(20, 16), sticky="ew")
@@ -384,7 +384,7 @@ class DocCreatorApp(ctk.CTk):
         self.edit_excel_btn.grid(row=0, column=1, padx=(16, 8))
         ctk.CTkButton(step2_inner, text="Browse...", command=self.select_excel_file, width=120, height=40, fg_color=self.colors["gray-600"], hover_color=self.colors["gray-700"], font=self.fonts["button"]).grid(row=0, column=2, padx=(0, 0))
 
-        step3_card = ctk.CTkFrame(left_frame, fg_color=self.colors["gray-800"], corner_radius=8)
+        step3_card = ctk.CTkFrame(left_frame, fg_color=self.colors["gray-800"], corner_radius=8, border_color=self.colors["gray-600"], border_width=1)
         step3_card.grid(row=2, column=0, sticky="ew", pady=12)
         step3_card.grid_columnconfigure(0, weight=1)
         ctk.CTkLabel(step3_card, text="Step 3: Select Output Folder", font=self.fonts["card_title"], text_color=self.colors["gray-300"], anchor="w").grid(row=0, column=0, columnspan=1, padx=24, pady=(20, 16), sticky="ew")
