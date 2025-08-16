@@ -22,7 +22,7 @@ import win32com.client as win32
 import time
 import google.generativeai as genai
 
-# ICON_BASE64 = "" # You can add your Base64 icon string here later...for scripting only.  use the .ico file in the same directory as the exe when running. 
+ICON_BASE64 = ""
 
 # --- CONFIGURATION & DATA HANDLING ---
 
@@ -75,7 +75,7 @@ def generate_ai_sectional_content(intended_use, document_title, section_header, 
         
         genai.configure(api_key=api_key)
         
-        model = genai.GenerativeModel('gemini-2.5-pro')
+        model = genai.GenerativeModel('gemini-2.0-flash-lite')
         
         # --- Build the prompt dynamically ---
         prompt_parts = [
