@@ -1,4 +1,4 @@
-# Filename: DocCreatorv9.4.py 
+# Filename: DocCreatorv9.5.py 
 # Function: Word Document Generator
 # Author: Trinidad Hernandez
 # Description: Finalized bulk doc generator with two AI modes: a simple all-or-nothing generation
@@ -151,13 +151,11 @@ def document_generation_worker(excel_path, output_folder, template_path, progres
                 doc = word.Documents.Add(Template=str(template_path))
                 document_title = str(row.get("Title", "")).strip()
 
-                # --- FIX: Reverted logic to always write headings and conditionally write content ---
                 for col_header in df.columns:
                     if heading_pattern.match(col_header):
                         heading_content = str(row.get(col_header, "")).strip()
                         if not heading_content: continue
 
-                        # Step 1: Always write the heading from the Excel file
                         level = col_header.count('-') + 1
                         word_style = f"Heading {level}"
                         progress_queue.put(("log", f"  -> Adding Header: '{heading_content[:40]}...'\n"))
@@ -168,16 +166,14 @@ def document_generation_worker(excel_path, output_folder, template_path, progres
                         heading_indent = word.Selection.ParagraphFormat.LeftIndent
                         word.Selection.TypeParagraph()
 
-                        # Step 2: Determine which content to write (AI or manual), if any
                         use_ai_for_section = False
                         if selective_mode:
                             use_ai_for_section = selection_data.get(filename, {}).get(heading_content, False)
-                        elif ai_enabled: # Simple mode check
+                        elif ai_enabled:
                             use_ai_for_section = True
                         
                         manual_text_content = str(row.get(f"{col_header}-text", "")).strip()
 
-                        # Set style and indent for the upcoming body text paragraph
                         word.Selection.Style = doc.Styles("Normal")
                         word.Selection.ParagraphFormat.LeftIndent = heading_indent
                         
@@ -193,7 +189,6 @@ def document_generation_worker(excel_path, output_folder, template_path, progres
                             word.Selection.TypeText(Text=manual_text_content)
                         
                         word.Selection.TypeParagraph()
-                # --- END FIX ---
                 
                 if doc.Sections.Count > 0:
                     for section in doc.Sections:
@@ -474,7 +469,8 @@ class DocCreatorApp(ctk.CTk):
                         heading_content = str(row.get(col_header, "")).strip()
                         if not heading_content: continue
                         level = col_header.count('-') + 1
-                        item_id = self.selection_tree.insert(parent_id, "end", text=f"[  ] {heading_content}")
+                        indent_prefix = "    " * (level - 1)
+                        item_id = self.selection_tree.insert(parent_id, "end", text=f"{indent_prefix}[  ] {heading_content}")
                         self.tree_item_map[item_id] = (filename, heading_content, level, parent_id)
                         self.selection_data[filename][heading_content] = False
             self.generate_btn.configure(state="normal")
@@ -490,7 +486,8 @@ class DocCreatorApp(ctk.CTk):
         current_state = self.selection_data[filename][section_name]
         new_state = not current_state
         self.selection_data[filename][section_name] = new_state
-        new_text = f"[{'✓' if new_state else ' '}] {section_name}"
+        indent_prefix = "    " * (level - 1)
+        new_text = f"{indent_prefix}[{'✓' if new_state else ' '}] {section_name}"
         self.selection_tree.item(item_id, text=new_text)
 
     def _apply_tree_filter(self):
@@ -501,7 +498,8 @@ class DocCreatorApp(ctk.CTk):
             self.selection_tree.detach(item_id)
             filename, section_name, level, parent_id = data
             is_selected = self.selection_data[filename][section_name]
-            current_text = f"[{'✓' if is_selected else ' '}] {section_name}"
+            indent_prefix = "    " * (level - 1)
+            current_text = f"{indent_prefix}[{'✓' if is_selected else ' '}] {section_name}"
             self.selection_tree.item(item_id, text=current_text)
             if (level == 1 and show_level1) or (level == 2 and show_level2) or (level >= 3 and show_level3):
                 self.selection_tree.move(item_id, parent_id, "end")
