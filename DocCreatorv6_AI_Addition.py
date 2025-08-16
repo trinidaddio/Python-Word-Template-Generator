@@ -94,8 +94,7 @@ def generate_ai_sectional_content(intended_use, document_title, section_header, 
 
         prompt_parts.append(
             f"\nWrite the body text for \"{section_header}\"."
-            f"Rules: Output only the paragraph text, do not repeat the header. Use no special characters. Use brief sentences."
-        
+            f"Rules: Output only the paragraph text, do not repeat the header. Do not repeat the same sentences in each section, be unique.  Use no special characters.  Use brief sentences."
         )
         
         full_prompt = "\n".join(prompt_parts)
