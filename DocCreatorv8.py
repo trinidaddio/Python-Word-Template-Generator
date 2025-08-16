@@ -1,4 +1,4 @@
-# Filename: DocCreatorv8.4.py 
+# Filename: DocCreatorv8.5.py 
 # Function: Word Document Generator
 # Author: Trinidad Hernandez
 # Description: Bulk doc generator with two AI modes: a simple all-or-nothing generation
@@ -261,7 +261,6 @@ class DocCreatorApp(ctk.CTk):
         self.total_docs = 0
         self.temp_icon_path = None
         self.selection_data = {}
-        # --- MODIFICATION: Added map to make tree selection robust ---
         self.tree_item_map = {}
         
         font_family = "Century Gothic"
@@ -316,9 +315,10 @@ class DocCreatorApp(ctk.CTk):
         right_frame = ctk.CTkFrame(main_container, fg_color="transparent")
         right_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 10))
         right_frame.grid_columnconfigure(0, weight=1)
-        right_frame.grid_rowconfigure(1, weight=1)
-
-        # Step 1 & 2 Cards (Unchanged)
+        # --- FIX: Set grid weight on the correct row to fix layout skew ---
+        right_frame.grid_rowconfigure(2, weight=1)
+        
+        # Step 1 & 2 Cards
         step1_card = ctk.CTkFrame(left_frame, fg_color=self.colors["gray-800"], corner_radius=8,border_color=self.colors["gray-600"], border_width=1)
         step1_card.grid(row=0, column=0, sticky="ew", pady=(10, 6))
         ctk.CTkLabel(step1_card, text="Step 1: Select Word Template (.dotm)", font=self.fonts["card_title"], text_color=self.colors["gray-300"], anchor="w").grid(row=0, column=0, padx=24, pady=(20, 16), sticky="ew")
@@ -348,7 +348,6 @@ class DocCreatorApp(ctk.CTk):
         ai_card.grid(row=2, column=0, sticky="ew", pady=6)
         ai_card.grid_columnconfigure(0, weight=1)
         
-        # --- MODIFICATION: Vertical and always-visible AI switches ---
         mode_header_frame = ctk.CTkFrame(ai_card, fg_color="transparent")
         mode_header_frame.grid(row=0, column=0, padx=24, pady=(20,10), sticky="ew")
         mode_header_frame.grid_columnconfigure(0, weight=1)
@@ -365,7 +364,6 @@ class DocCreatorApp(ctk.CTk):
         self.selective_mode_var = ctk.BooleanVar(value=False)
         self.selective_mode_switch = ctk.CTkSwitch(mode_header_frame, text="", variable=self.selective_mode_var, command=self._toggle_ui_mode)
         self.selective_mode_switch.grid(row=1, column=2, sticky="w")
-        # --- END MODIFICATION ---
         
         model_options = [ 'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-live-2.5-flash-preview', 'gemini-2.5-flash-preview-native-audio-dialog', 'gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash-live-001', 'gemini-2.0-flash-preview-image-generation', 'gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.5-flash-8b' ]
         model_frame = ctk.CTkFrame(ai_card, fg_color="transparent")
@@ -401,7 +399,6 @@ class DocCreatorApp(ctk.CTk):
         self.prompt_entry_3 = ctk.CTkEntry(additional_prompts_frame, placeholder_text="e.g., sterilization, compliance, maintenance", font=self.fonts["log"])
         self.prompt_entry_3.grid(row=2, column=1, sticky="ew", padx=(10,0), pady=(8,0))
         
-        # Action Buttons
         step4_card = ctk.CTkFrame(left_frame, fg_color=self.colors["gray-800"], corner_radius=8, border_color=self.colors["gray-600"], border_width=1)
         step4_card.grid(row=3, column=0, sticky="ew", pady=6)
         ctk.CTkLabel(step4_card, text="Step 4: Select Output Folder", font=self.fonts["card_title"], text_color=self.colors["gray-300"], anchor="w").grid(row=0, column=0, padx=24, pady=(20, 16), sticky="ew")
@@ -423,7 +420,6 @@ class DocCreatorApp(ctk.CTk):
         # Right Frame
         ctk.CTkLabel(right_frame, text="Status Log / Section Selector", font=self.fonts["card_title"], text_color=self.colors["gray-300"]).grid(row=0, column=0,  sticky="w", pady=(10, 8))
         
-        # --- MODIFICATION: Filter Checkboxes ---
         self.filter_frame = ctk.CTkFrame(right_frame, fg_color="transparent")
         self.filter_frame.grid(row=1, column=0, sticky="ew", pady=(0, 5))
         self.filter_var1 = ctk.BooleanVar(value=True)
@@ -435,11 +431,10 @@ class DocCreatorApp(ctk.CTk):
         ctk.CTkCheckBox(self.filter_frame, text="Level 3+ (Hn-..)", variable=self.filter_var3, font=self.fonts["button"], command=self._apply_tree_filter).pack(side="left", padx=5)
         
         self.status_box = ctk.CTkTextbox(right_frame, wrap="word", font=self.fonts["log"], state="disabled", fg_color=self.colors["gray-800"], border_color=self.colors["gray-600"], border_width=1)
-        self.status_box.grid(row=2, column=0, sticky="nsew") # Now on row 2
+        self.status_box.grid(row=2, column=0, sticky="nsew")
 
         self.tree_frame = ctk.CTkFrame(right_frame, fg_color="transparent")
-        self.tree_frame.grid(row=2, column=0, sticky="nsew") # Now on row 2
-        right_frame.grid_rowconfigure(2, weight=1) # Adjust weight to new row
+        self.tree_frame.grid(row=2, column=0, sticky="nsew")
         self.tree_frame.grid_columnconfigure(0, weight=1)
         self.tree_frame.grid_rowconfigure(0, weight=1)
 
@@ -460,22 +455,26 @@ class DocCreatorApp(ctk.CTk):
         self.selection_tree.bind("<ButtonRelease-1>", self._toggle_selection)
         
         self.open_folder_btn = ctk.CTkButton(right_frame, text="Open Output Folder", state="disabled", command=self.open_output_folder, height=52, fg_color=self.colors["gray-700"], hover_color=self.colors["gray-600"], font=self.fonts["button"])
-        self.open_folder_btn.grid(row=3, column=0, sticky="ew", pady=(16, 10)) # Now on row 3
+        self.open_folder_btn.grid(row=3, column=0, sticky="ew", pady=(16, 10))
     
     def _toggle_ui_mode(self):
         is_selective = self.selective_mode_var.get()
         
         if is_selective:
+            # --- FIX: Auto-enable AI and disable the switch ---
             self.ai_switch_var.set(True)
             self.ai_switch.configure(state="disabled")
-            self.ai_enable_label.configure(state="disabled")
+            self.ai_enable_label.configure(state="disabled", text_color=self.colors["gray-600"])
+            
             self.scan_btn.grid()
             self.status_box.grid_remove()
             self.tree_frame.grid()
             self.filter_frame.grid()
         else:
+            # --- FIX: Re-enable the AI switch ---
             self.ai_switch.configure(state="normal")
-            self.ai_enable_label.configure(state="normal")
+            self.ai_enable_label.configure(state="normal", text_color=self.colors["gray-400"])
+
             self.scan_btn.grid_remove()
             self.tree_frame.grid_remove()
             self.filter_frame.grid_remove()
@@ -512,9 +511,11 @@ class DocCreatorApp(ctk.CTk):
             messagebox.showerror("Excel Scan Error", f"Could not read the Excel file:\n{e}")
             self.generate_btn.configure(state="disabled")
 
+    # --- FIX: More robust selection logic ---
     def _toggle_selection(self, event):
         item_id = self.selection_tree.identify_row(event.y)
-        if not item_id in self.tree_item_map: return
+        if not item_id or item_id not in self.tree_item_map: 
+            return # Exit if it's not a valid, selectable child item
         
         filename, section_name, level = self.tree_item_map[item_id]
         
@@ -525,19 +526,23 @@ class DocCreatorApp(ctk.CTk):
         new_text = f"[{'✓' if new_state else ' '}] {section_name}"
         self.selection_tree.item(item_id, text=new_text)
 
+    # --- FIX: Corrected filter logic ---
     def _apply_tree_filter(self):
         show_level1 = self.filter_var1.get()
         show_level2 = self.filter_var2.get()
         show_level3 = self.filter_var3.get()
         
         for parent_id in self.selection_tree.get_children():
-            # First, detach all children
-            for item_id in self.selection_tree.get_children(parent_id):
-                self.selection_tree.detach(item_id)
+            # Get the list of children BEFORE detaching them
+            child_items = self.tree_item_map.keys()
             
-            # Then, re-attach the ones that match the filter
+            # Detach all children of the current parent
             for item_id in self.selection_tree.get_children(parent_id):
-                if item_id in self.tree_item_map:
+                 self.selection_tree.detach(item_id)
+            
+            # Re-attach only the ones that match the filter
+            for item_id in child_items:
+                if self.selection_tree.parent(item_id) == parent_id:
                     _, _, level = self.tree_item_map[item_id]
                     if (level == 1 and show_level1) or \
                        (level == 2 and show_level2) or \
