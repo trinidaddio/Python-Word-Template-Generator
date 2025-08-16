@@ -75,7 +75,7 @@ def generate_ai_sectional_content(intended_use, document_title, section_header, 
         
         genai.configure(api_key=api_key)
         
-        model = genai.GenerativeModel('gemini-2.0-flash-lite')
+        model = genai.GenerativeModel('gemini-2.5-flash-lite')
         
         # --- Build the prompt dynamically ---
         prompt_parts = [
