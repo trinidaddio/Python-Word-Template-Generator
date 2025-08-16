@@ -1,4 +1,4 @@
-# Filename: DocCreatorv7.py 
+# Filename: DocCreatorv7.2.py 
 # Function: Word Document Generator
 # Author: Trinidad Hernandez
 # Description: Bulk doc generator. Features AI option with prompts and dynamic content generation. Reads bulk filenames and titles from an excel file for targeted text generation per the document type.  
@@ -55,7 +55,9 @@ def save_last_locations(excel_path=None, output_dir=None, template_path=None):
         pass
 
 # --- AI CONTENT GENERATION ---
-def generate_ai_sectional_content(intended_use, document_title, section_header, additional_prompts):
+# --- MODIFICATION START ---
+def generate_ai_sectional_content(intended_use, document_title, section_header, additional_prompts, model_name):
+# --- MODIFICATION END ---
     """
     Calls the Gemini API to generate new content for a specific section header.
     
@@ -64,6 +66,7 @@ def generate_ai_sectional_content(intended_use, document_title, section_header, 
         document_title (str): The title of the specific document being generated.
         section_header (str): The specific header of the section needing content.
         additional_prompts (list): A list of tuples with extra instructions (e.g., [("Target Audience", "Engineers")]).
+        model_name (str): The specific Gemini model to use for the API call.
         
     Returns:
         str: The AI-generated sectional content, or an error message if the call fails.
@@ -76,8 +79,10 @@ def generate_ai_sectional_content(intended_use, document_title, section_header, 
         
         genai.configure(api_key=api_key)
         
-        # This model name may need updating based on the latest available models
-        model = genai.GenerativeModel('gemini-2.5-flash-lite') 
+        # --- MODIFICATION START ---
+        # Use the model name passed from the UI
+        model = genai.GenerativeModel(model_name) 
+        # --- MODIFICATION END ---
         
         # --- Build the prompt dynamically ---
         prompt_parts = [
@@ -96,7 +101,7 @@ def generate_ai_sectional_content(intended_use, document_title, section_header, 
 
         prompt_parts.append(
             f"\nWrite the body text for the section: \"{section_header}\"."
-            f"Rules: Output only the paragraph text. Do not repeat the header in your response. Ensure the content is unique and does not repeat sentences from other sections. The device model name should primarily be used in the opening sections. Use concise sentences and avoid special characters."
+            f"Rules: Output only the paragraph text. Do not repeat the header in responses. Ensure response content is unique and does not repeat sentences from other sections. The device model name should primarily be used in the opening sections. Use brief sentences and avoid special characters."
         )
         
         full_prompt = "\n".join(prompt_parts)
@@ -132,7 +137,9 @@ def kill_word_processes():
     except Exception:
         pass
 
-def document_generation_worker(excel_path, output_folder, template_path, progress_queue, ai_enabled, intended_use_statement, additional_prompts):
+# --- MODIFICATION START ---
+def document_generation_worker(excel_path, output_folder, template_path, progress_queue, ai_enabled, intended_use_statement, additional_prompts, selected_model):
+# --- MODIFICATION END ---
     """
     Worker function to be run in a separate thread.
     Handles the core logic of reading the Excel file and generating Word documents.
@@ -197,7 +204,9 @@ def document_generation_worker(excel_path, output_folder, template_path, progres
                             if ai_enabled:
                                 if document_title and intended_use_statement.strip():
                                     progress_queue.put(("log", f"    -> Calling Gemini for '{heading_content}' section...\n"))
-                                    ai_text = generate_ai_sectional_content(intended_use_statement, document_title, heading_content, additional_prompts)
+                                    # --- MODIFICATION START ---
+                                    ai_text = generate_ai_sectional_content(intended_use_statement, document_title, heading_content, additional_prompts, selected_model)
+                                    # --- MODIFICATION END ---
                                     
                                     word.Selection.Style = doc.Styles("Normal")
                                     word.Selection.ParagraphFormat.LeftIndent = heading_indent
@@ -319,7 +328,9 @@ class DocCreatorApp(ctk.CTk):
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         width = int(screen_width * 0.55)
-        height = int(screen_height * 0.8) 
+        # --- MODIFICATION START ---
+        height = int(screen_height * 0.85) # Increased height for new control
+        # --- MODIFICATION END ---
         x = int((screen_width / 2) - (width / 2))
         y = int((screen_height / 2) - (height / 2))
         self.geometry(f"{width}x{height}+{x}+{y}")
@@ -382,7 +393,9 @@ class DocCreatorApp(ctk.CTk):
             "blue-700": "#1D4ED8", "green-400": "#4ADE80",
         }
         self.title("Midmark Batch Document Generator")
-        self.minsize(800, 850) 
+        # --- MODIFICATION START ---
+        self.minsize(800, 900) # Increased min height
+        # --- MODIFICATION END ---
         self.configure(fg_color=self.colors["gray-900"])
 
         self.grid_columnconfigure(0, weight=1)
@@ -439,25 +452,43 @@ class DocCreatorApp(ctk.CTk):
         
         ai_header_frame = ctk.CTkFrame(ai_card, fg_color="transparent")
         ai_header_frame.grid(row=0, column=0, padx=24, pady=(20, 16), sticky="ew")
-        ai_header_frame.grid_columnconfigure(1, weight=1)
+        ai_header_frame.grid_columnconfigure(0, weight=1) 
 
+        ctk.CTkLabel(ai_header_frame, text="Step 3: AI Content Generation", font=self.fonts["card_title"], text_color=self.colors["gray-300"], anchor="w").grid(row=0, column=0, sticky="w")
+        
         self.ai_switch_var = ctk.BooleanVar(value=False)
         ai_switch = ctk.CTkSwitch(ai_header_frame, text="", variable=self.ai_switch_var, switch_height=20, switch_width=40)
-        ai_switch.grid(row=0, column=0, sticky="w")
-        
-        ctk.CTkLabel(ai_header_frame, text="Step 3: AI Content Generation", font=self.fonts["card_title"], text_color=self.colors["gray-300"], anchor="w").grid(row=0, column=1, padx=(12,0), sticky="w")
+        ai_switch.grid(row=0, column=1, sticky="e")
 
-        ctk.CTkLabel(ai_card, text="Intended Use Statement", font=self.fonts["button"], text_color=self.colors["gray-400"]).grid(row=1, column=0, padx=24, pady=(0,4), sticky="w")
+        # --- MODIFICATION START: AI Model Selection Dropdown ---
+        model_options = [
+            'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 
+            'gemini-live-2.5-flash-preview', 'gemini-2.5-flash-preview-native-audio-dialog',
+            'gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts', 
+            'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash-live-001', 
+            'gemini-2.0-flash-preview-image-generation', 'gemini-1.5-pro', 
+            'gemini-1.5-flash', 'gemini-1.5-flash-8b'
+        ]
+
+        model_frame = ctk.CTkFrame(ai_card, fg_color="transparent")
+        model_frame.grid(row=1, column=0, padx=24, pady=(0, 10), sticky="ew")
+        model_frame.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(model_frame, text="AI Model", font=self.fonts["button"], text_color=self.colors["gray-400"]).grid(row=0, column=0, sticky="w")
+        self.model_selection_combo = ctk.CTkComboBox(model_frame, values=model_options, font=self.fonts["log"])
+        self.model_selection_combo.grid(row=0, column=1, sticky="ew", padx=(10, 0))
+        self.model_selection_combo.set('gemini-2.5-flash-lite') # Set default model
+        # --- MODIFICATION END ---
+
+        ctk.CTkLabel(ai_card, text="Intended Use Statement", font=self.fonts["button"], text_color=self.colors["gray-400"]).grid(row=2, column=0, padx=24, pady=(0,4), sticky="w")
         self.intended_use_textbox = ctk.CTkTextbox(ai_card, height=80, wrap="word", font=self.fonts["log"], fg_color=self.colors["gray-700"], text_color=self.colors["gray-200"], border_width=0, corner_radius=6)
-        self.intended_use_textbox.grid(row=2, column=0, sticky="ew", padx=24, pady=(0, 12))
+        self.intended_use_textbox.grid(row=3, column=0, sticky="ew", padx=24, pady=(0, 12))
         self.intended_use_textbox.insert("1.0", "Example: This document is for trained technicians to perform annual maintenance on the Midmark XYZ model.")
         
-        # --- MODIFICATION START: Dropdown Menus for AI Prompts ---
         additional_prompts_frame = ctk.CTkFrame(ai_card, fg_color="transparent")
-        additional_prompts_frame.grid(row=3, column=0, sticky="ew", padx=24, pady=(0, 24))
+        additional_prompts_frame.grid(row=4, column=0, sticky="ew", padx=24, pady=(0, 24))
         additional_prompts_frame.grid_columnconfigure(1, weight=1)
         
-        # Define dropdown options
         audience_options = [
             "Field Service Technicians", "Biomedical Engineers (Biomeds)", 
             "Clinical Staff (Nurses, Assistants)", "Physicians / Doctors", 
@@ -469,29 +500,25 @@ class DocCreatorApp(ctk.CTk):
             "Informative", "Authoritative", "Formal (Regulatory)"
         ]
 
-        # -- Prompt Row 1: Audience --
-        self.prompt_cb_var_1 = ctk.BooleanVar(value=True) # Enabled by default
+        self.prompt_cb_var_1 = ctk.BooleanVar(value=True)
         self.prompt_checkbox_1 = ctk.CTkCheckBox(additional_prompts_frame, text="Target Audience", variable=self.prompt_cb_var_1, font=self.fonts["button"])
         self.prompt_checkbox_1.grid(row=0, column=0, sticky="w")
         self.prompt_entry_1 = ctk.CTkComboBox(additional_prompts_frame, values=audience_options, font=self.fonts["log"])
         self.prompt_entry_1.grid(row=0, column=1, sticky="ew", padx=(10,0))
-        self.prompt_entry_1.set(audience_options[5]) # Set default value
+        self.prompt_entry_1.set(audience_options[5]) 
         
-        # -- Prompt Row 2: Tone --
-        self.prompt_cb_var_2 = ctk.BooleanVar(value=True) # Enabled by default
+        self.prompt_cb_var_2 = ctk.BooleanVar(value=True) 
         self.prompt_checkbox_2 = ctk.CTkCheckBox(additional_prompts_frame, text="Tone of Voice", variable=self.prompt_cb_var_2, font=self.fonts["button"])
         self.prompt_checkbox_2.grid(row=1, column=0, sticky="w", pady=(8,0))
         self.prompt_entry_2 = ctk.CTkComboBox(additional_prompts_frame, values=tone_options, font=self.fonts["log"])
         self.prompt_entry_2.grid(row=1, column=1, sticky="ew", padx=(10,0), pady=(8,0))
-        self.prompt_entry_2.set(tone_options[2]) # Set default value
+        self.prompt_entry_2.set(tone_options[2])
         
-        # -- Prompt Row 3: Keywords (remains a text entry) --
         self.prompt_cb_var_3 = ctk.BooleanVar(value=False)
         self.prompt_checkbox_3 = ctk.CTkCheckBox(additional_prompts_frame, text="Include Keywords", variable=self.prompt_cb_var_3, font=self.fonts["button"])
         self.prompt_checkbox_3.grid(row=2, column=0, sticky="w", pady=(8,0))
         self.prompt_entry_3 = ctk.CTkEntry(additional_prompts_frame, placeholder_text="e.g., sterilization, compliance, maintenance", font=self.fonts["log"])
         self.prompt_entry_3.grid(row=2, column=1, sticky="ew", padx=(10,0), pady=(8,0))
-        # --- MODIFICATION END ---
         
         # --- Output Folder and Generate Button ---
         step4_card = ctk.CTkFrame(left_frame, fg_color=self.colors["gray-800"], corner_radius=8, border_color=self.colors["gray-600"], border_width=1)
@@ -611,7 +638,11 @@ class DocCreatorApp(ctk.CTk):
         ai_enabled = self.ai_switch_var.get()
         intended_use_statement = self.intended_use_textbox.get("1.0", "end-1c")
         
-        # --- Gather additional prompts from the UI ---
+        # --- MODIFICATION START ---
+        # Gather additional prompts and selected model from the UI
+        selected_model = self.model_selection_combo.get()
+        # --- MODIFICATION END ---
+
         additional_prompts = []
         if self.prompt_cb_var_1.get() and self.prompt_entry_1.get():
             additional_prompts.append(("Target Audience", self.prompt_entry_1.get()))
@@ -620,12 +651,14 @@ class DocCreatorApp(ctk.CTk):
         if self.prompt_cb_var_3.get() and self.prompt_entry_3.get():
             additional_prompts.append(("Keywords to Include", self.prompt_entry_3.get()))
 
-        # Pass the new list to the worker thread
+        # --- MODIFICATION START ---
+        # Pass the selected model to the worker thread
         self.worker_thread = threading.Thread(
             target=document_generation_worker, 
-            args=(self.excel_path, self.output_folder, self.template_path, self.progress_queue, ai_enabled, intended_use_statement, additional_prompts),
+            args=(self.excel_path, self.output_folder, self.template_path, self.progress_queue, ai_enabled, intended_use_statement, additional_prompts, selected_model),
             daemon=True
         )
+        # --- MODIFICATION END ---
         self.worker_thread.start()
 
     def poll_queue(self):
