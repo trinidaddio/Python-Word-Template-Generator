@@ -82,7 +82,7 @@ def generate_ai_sectional_content(intended_use, document_title, section_header, 
             prompt_parts.append("\n".join(instruction_parts))
 
         prompt_parts.append(
-            f"\nWrite the body text for the section: \"{section_header}\"."
+            f"\nWrite the body text for the section: \"{section_header}\"." 
             f"Rules: Output only the paragraph text. Do not repeat the header in your response. Ensure the content is unique and does not repeat sentences from other sections. The device model name should primarily be used in the opening sections. Use concise sentences and avoid special characters."
         )
 
@@ -162,7 +162,8 @@ def document_generation_worker(excel_path, output_folder, template_path, progres
 
                         level = col_header.count('-') + 1
                         word_style = f"Heading {level}"
-                        progress_queue.put(("log", f"  -> Adding Header: '{heading_content[:40]}...'\n"))
+                        progress_queue.put(("log", f"  -> Adding Header: '{heading_content[:40]}...'
+"))
 
                         word.Selection.EndKey(Unit=win32.constants.wdStory)
                         word.Selection.Style = doc.Styles(word_style)
