@@ -94,7 +94,7 @@ def generate_ai_sectional_content(intended_use, document_title, section_header, 
 
         prompt_parts.append(
             f"\nWrite the body text for \"{section_header}\"."
-            f"Rules: Output only the paragraph text, do not repeat the header. Use no special characters except brackets [for references]. Use brief sentences."
+            f"Rules: Output only the paragraph text, do not repeat the header. Use no special characters except [references]. Compile all [references] in the last References section of the document.  Use brief sentences."
         
         )
         
