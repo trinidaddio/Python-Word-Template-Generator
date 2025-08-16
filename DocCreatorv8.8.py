@@ -1,7 +1,7 @@
-# Filename: DocCreatorv8.8.py 
+# Filename: DocCreatorv9.4.py 
 # Function: Word Document Generator
 # Author: Trinidad Hernandez
-# Description: Bulk doc generator with two AI modes: a simple all-or-nothing generation
+# Description: Finalized bulk doc generator with two AI modes: a simple all-or-nothing generation
 #              and an advanced selective mode for per-section AI content generation with filtering.
 
 import os
@@ -151,11 +151,13 @@ def document_generation_worker(excel_path, output_folder, template_path, progres
                 doc = word.Documents.Add(Template=str(template_path))
                 document_title = str(row.get("Title", "")).strip()
 
+                # --- FIX: Reverted logic to always write headings and conditionally write content ---
                 for col_header in df.columns:
                     if heading_pattern.match(col_header):
                         heading_content = str(row.get(col_header, "")).strip()
                         if not heading_content: continue
 
+                        # Step 1: Always write the heading from the Excel file
                         level = col_header.count('-') + 1
                         word_style = f"Heading {level}"
                         progress_queue.put(("log", f"  -> Adding Header: '{heading_content[:40]}...'\n"))
@@ -166,42 +168,33 @@ def document_generation_worker(excel_path, output_folder, template_path, progres
                         heading_indent = word.Selection.ParagraphFormat.LeftIndent
                         word.Selection.TypeParagraph()
 
+                        # Step 2: Determine which content to write (AI or manual), if any
                         use_ai_for_section = False
                         if selective_mode:
                             use_ai_for_section = selection_data.get(filename, {}).get(heading_content, False)
-                        elif ai_enabled:
+                        elif ai_enabled: # Simple mode check
                             use_ai_for_section = True
+                        
+                        manual_text_content = str(row.get(f"{col_header}-text", "")).strip()
+
+                        # Set style and indent for the upcoming body text paragraph
+                        word.Selection.Style = doc.Styles("Normal")
+                        word.Selection.ParagraphFormat.LeftIndent = heading_indent
                         
                         if use_ai_for_section:
                             if document_title and intended_use_statement.strip():
                                 progress_queue.put(("log", f"    -> Calling Gemini for '{heading_content}' section...\n"))
                                 ai_text = generate_ai_sectional_content(intended_use_statement, document_title, heading_content, additional_prompts, selected_model)
-                                word.Selection.Style = doc.Styles("Normal")
-                                word.Selection.ParagraphFormat.LeftIndent = heading_indent
                                 word.Selection.TypeText(Text=ai_text)
                             else:
                                 progress_queue.put(("log", "    -> [SKIPPED AI] Missing 'Title' in Excel or Intended Use statement.\n"))
-                        else:
-                            text_col_name = f"{col_header}-text"
-                            if text_col_name in df.columns:
-                                body_text = str(row.get(text_col_name, "")).strip()
-                                if body_text:
-                                    progress_queue.put(("log", f"    -> Adding body text from '{text_col_name}'\n"))
-                                    word.Selection.Style = doc.Styles("Normal")
-                                    word.Selection.ParagraphFormat.LeftIndent = heading_indent
-                                    word.Selection.TypeText(Text=body_text)
+                        elif manual_text_content:
+                            progress_queue.put(("log", f"    -> Adding body text from '{col_header}-text'\n"))
+                            word.Selection.TypeText(Text=manual_text_content)
                         
-                        # --- FIX: Re-added paragraph break to separate sections ---
                         word.Selection.TypeParagraph()
-                        # --- END FIX ---
-
-                progress_queue.put(("log", "  -> Adding static 'References' section...\n"))
-                word.Selection.EndKey(Unit=win32.constants.wdStory)
-                word.Selection.Style = doc.Styles("Heading 1")
-                word.Selection.TypeText(Text="References")
-                word.Selection.TypeParagraph()
+                # --- END FIX ---
                 
-                # --- FIX: Restored full placeholder replacement logic for headers and footers ---
                 if doc.Sections.Count > 0:
                     for section in doc.Sections:
                         for header in section.Headers:
@@ -216,12 +209,9 @@ def document_generation_worker(excel_path, output_folder, template_path, progres
                 for col_name, cell_value in row.items():
                     placeholder = f"<{col_name}>"
                     _replace_placeholder_in_range(doc.Content, placeholder, cell_value)
-                # --- END FIX ---
-                
-                # --- FIX: Cleanup step to prevent blank first page ---
+
                 if doc.Paragraphs.Count > 0 and doc.Paragraphs(1).Range.Text.strip() == "":
                     doc.Paragraphs(1).Range.Delete()
-                # --- END FIX ---
 
                 safe_name = "".join(c for c in filename if c.isalnum() or c in "._- ")
                 doc_path = Path(output_folder) / f"{safe_name}.docx"
@@ -401,15 +391,19 @@ class DocCreatorApp(ctk.CTk):
         self.output_folder_label.grid(row=0, column=0, sticky="ew")
         ctk.CTkButton(step4_inner, text="Browse...", command=self.select_output_folder, width=120, height=40, fg_color=self.colors["gray-600"], hover_color=self.colors["gray-700"], font=self.fonts["button"]).grid(row=0, column=1, padx=(16, 0))
 
-        self.scan_btn = ctk.CTkButton(left_frame, text="Scan Excel File", state="disabled", command=self.scan_excel_file, height=52, fg_color=self.colors["gray-600"], hover_color=self.colors["gray-700"], font=self.fonts["card_title"])
-        self.scan_btn.grid(row=4, column=0, sticky="ew", pady=(12, 6))
         self.generate_btn = ctk.CTkButton(left_frame, text="Generate Documents", state="disabled", command=self.start_generation, height=52, fg_color=self.colors["blue-600"], hover_color=self.colors["blue-700"], font=self.fonts["card_title"])
-        self.generate_btn.grid(row=5, column=0,  sticky="ew", pady=(0, 6))
+        self.generate_btn.grid(row=4, column=0,  sticky="ew", pady=(12, 6))
         self.progress_bar = ctk.CTkProgressBar(left_frame, mode="determinate", height=16, fg_color=self.colors["gray-700"], progress_color=self.colors["green-400"])
         self.status_label = ctk.CTkLabel(left_frame, text="Status: Ready", font=self.fonts["status"], text_color=self.colors["green-400"])
-        self.status_label.grid(row=6, column=0, pady=4, sticky="w")
-
-        ctk.CTkLabel(right_frame, text="Status Log / Section Selector", font=self.fonts["card_title"], text_color=self.colors["gray-300"]).grid(row=0, column=0,  sticky="w", pady=(10, 8))
+        self.status_label.grid(row=5, column=0, pady=4, sticky="w")
+        
+        right_header_frame = ctk.CTkFrame(right_frame, fg_color="transparent")
+        right_header_frame.grid(row=0, column=0, sticky="ew", pady=(10, 8))
+        right_header_frame.grid_columnconfigure(0, weight=1)
+        ctk.CTkLabel(right_header_frame, text="Status Log / Section Selector", font=self.fonts["card_title"], text_color=self.colors["gray-300"]).grid(row=0, column=0, sticky="w")
+        self.scan_btn = ctk.CTkButton(right_header_frame, text="Refresh Sections", width=120, height=30, state="disabled", command=self.scan_excel_file, fg_color=self.colors["gray-600"], hover_color=self.colors["gray-700"], font=self.fonts["button"])
+        self.scan_btn.grid(row=0, column=1, sticky="e")
+        
         self.filter_frame = ctk.CTkFrame(right_frame, fg_color="transparent")
         self.filter_frame.grid(row=1, column=0, sticky="ew", pady=(0, 5))
         self.filter_var1 = ctk.BooleanVar(value=True)
@@ -430,10 +424,8 @@ class DocCreatorApp(ctk.CTk):
         style.configure("Treeview", background=self.colors["gray-800"], foreground=self.colors["gray-200"], fieldbackground=self.colors["gray-800"], borderwidth=0, font=self.fonts["log"])
         style.map('Treeview', background=[('selected', self.colors["blue-700"])])
         style.configure("Treeview.Heading", background=self.colors["gray-700"], foreground=self.colors["gray-200"], font=self.fonts["button"])
-        self.selection_tree = ttk.Treeview(self.tree_frame, columns=("Section"), show="tree headings")
-        self.selection_tree.heading("#0", text="Document")
-        self.selection_tree.heading("Section", text="Section")
-        self.selection_tree.column("#0", width=200)
+        self.selection_tree = ttk.Treeview(self.tree_frame, show="tree")
+        self.selection_tree.heading("#0", text="Documents and Sections")
         self.selection_tree.grid(row=0, column=0, sticky="nsew")
         tree_scroll = ctk.CTkScrollbar(self.tree_frame, command=self.selection_tree.yview)
         tree_scroll.grid(row=0, column=1, sticky="ns")
@@ -452,6 +444,8 @@ class DocCreatorApp(ctk.CTk):
             self.status_box.grid_remove()
             self.tree_frame.grid()
             self.filter_frame.grid()
+            if self.excel_path:
+                self.scan_excel_file()
         else:
             self.ai_switch.configure(state="normal")
             self.ai_enable_label.configure(state="normal", text_color=self.colors["gray-400"])
@@ -473,7 +467,7 @@ class DocCreatorApp(ctk.CTk):
             for i, row in df.iterrows():
                 filename = str(row[filename_col]).strip()
                 if not filename: continue
-                parent_id = self.selection_tree.insert("", "end", text=f" {filename}", open=True)
+                parent_id = self.selection_tree.insert("", "end", text=f"{filename}", open=True)
                 self.selection_data[filename] = {}
                 for col_header in df.columns:
                     if heading_pattern.match(col_header):
@@ -481,7 +475,7 @@ class DocCreatorApp(ctk.CTk):
                         if not heading_content: continue
                         level = col_header.count('-') + 1
                         item_id = self.selection_tree.insert(parent_id, "end", text=f"[  ] {heading_content}")
-                        self.tree_item_map[item_id] = (filename, heading_content, level)
+                        self.tree_item_map[item_id] = (filename, heading_content, level, parent_id)
                         self.selection_data[filename][heading_content] = False
             self.generate_btn.configure(state="normal")
             self._apply_tree_filter()
@@ -492,7 +486,7 @@ class DocCreatorApp(ctk.CTk):
     def _toggle_selection(self, event):
         item_id = self.selection_tree.identify_row(event.y)
         if not item_id or item_id not in self.tree_item_map: return
-        filename, section_name, level = self.tree_item_map[item_id]
+        filename, section_name, level, parent_id = self.tree_item_map[item_id]
         current_state = self.selection_data[filename][section_name]
         new_state = not current_state
         self.selection_data[filename][section_name] = new_state
@@ -503,19 +497,17 @@ class DocCreatorApp(ctk.CTk):
         show_level1 = self.filter_var1.get()
         show_level2 = self.filter_var2.get()
         show_level3 = self.filter_var3.get()
-        for parent_id in self.selection_tree.get_children():
-            child_items = self.selection_tree.get_children(parent_id)
-            for item_id in child_items:
-                self.selection_tree.detach(item_id)
-                if item_id in self.tree_item_map:
-                    _, _, level = self.tree_item_map[item_id]
-                    if (level == 1 and show_level1) or (level == 2 and show_level2) or (level >= 3 and show_level3):
-                        self.selection_tree.move(item_id, parent_id, "end")
+        for item_id, data in self.tree_item_map.items():
+            self.selection_tree.detach(item_id)
+            filename, section_name, level, parent_id = data
+            is_selected = self.selection_data[filename][section_name]
+            current_text = f"[{'✓' if is_selected else ' '}] {section_name}"
+            self.selection_tree.item(item_id, text=current_text)
+            if (level == 1 and show_level1) or (level == 2 and show_level2) or (level >= 3 and show_level3):
+                self.selection_tree.move(item_id, parent_id, "end")
 
     def start_generation(self):
-        self.generate_btn.configure(state="disabled")
-        self.open_folder_btn.configure(state="disabled")
-        self.progress_bar.grid(row=6, column=0, sticky="ew", pady=(4, 6))
+        self.progress_bar.grid(row=5, column=0, sticky="ew", pady=(4, 6))
         self.progress_bar.set(0)
         if self.selective_mode_var.get():
             self.tree_frame.grid_remove()
