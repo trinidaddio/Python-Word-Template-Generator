@@ -22,7 +22,7 @@ import win32com.client as win32
 import time
 import google.generativeai as genai
 
-ICON_BASE64 = "" # You can add your Base64 icon string here later
+# ICON_BASE64 = "" # You can add your Base64 icon string here later...for scripting only.  use the .ico file in the same directory as the exe when running. 
 
 # --- CONFIGURATION & DATA HANDLING ---
 
@@ -69,13 +69,13 @@ def generate_ai_sectional_content(intended_use, document_title, section_header, 
         str: The AI-generated sectional content, or an error message if the call fails.
     """
     try:
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = "AIzaSyDf3cgcfhAdktmHWLkWOIqhi8OlxzzTFR8"
         if not api_key:
-            return "Error: Gemini API key not found in environment variables."
+            return "Error: No Gemini API key found"
         
         genai.configure(api_key=api_key)
         
-        model = genai.GenerativeModel('gemini-1.5-pro-latest')
+        model = genai.GenerativeModel('gemini-2.5-pro')
         
         # --- Build the prompt dynamically ---
         prompt_parts = [
